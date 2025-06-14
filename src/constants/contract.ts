@@ -3,28 +3,29 @@ export const REVENUE_CONFIG = {
   DEV_PERCENTAGE: 15,
   FOUNDER_PERCENTAGE: 85,
   DEV_ADDRESS: '0x9a5b0ad3a18964ab7c0dbf9ab4cdecfd6b3899423b47313ae6e78f4b801022a3',
-  FOUNDER_ADDRESS: '0xf1df42d3b603f6d22fc276c25dd1eee4c3f767d7a7e7ec36bf9c3d416a74e228',
+  FOUNDER_ADDRESS: '0x21221a34eb06d78b16ef4553572e228970f2972385b1d3feab68cfc80090f430',
   // Add deployer address for testing
   DEPLOYER_ADDRESS: '0x4822bfc9c86d1a77daf48b0bdf8f012ae9b7f8f01b4195dc0f3fd4fb838525bd',
 };
 
 export const CONTRACT_CONSTANTS = {
-  // TESTNET Deployment - KIOSK-INTEGRATED VERSION WITH FULL MARKETPLACE SUPPORT
-  PACKAGE_ID: '0xfe1b4b8aa749be78e4adff15432b22b0f0efd8c9ab74b002fe1bbcf2e5d80b02',
-  ADMIN_CAP_ID: '0x10dd76db14a46c1bd96a5e0fe3312328369fbdb06f14c1f741be2ab46be7e7a7', // Dev AdminCap (owned by deployer)
-  DEV_ADMIN_CAP_ID: '0x10dd76db14a46c1bd96a5e0fe3312328369fbdb06f14c1f741be2ab46be7e7a7', // Dev AdminCap
-  FOUNDER_ADMIN_CAP_ID: '0xdb9cab65b99a68967eff308582cb30480e301610a56f710f3536e9fe9038284f', // Founder AdminCap
-  GLOBAL_STATS_ID: '0x9f7f49bb47bf6f016d891e5aefc79bd36f4734f813dbbbb824a88fdb21559b13', // GlobalStats
+  // MAINNET Deployment - 2025-06-14
+  PACKAGE_ID: '0x5c67326d96aa593599722a174b1f358036f3b6ee3a42eccf3065aa02d9ecc666',
+  ADMIN_CAP_ID: '0xf3c1995e5d77f75e9350369285a93d13c038a4019d91a508ef4375b31ca9f886', // Dev AdminCap
+  DEV_ADMIN_CAP_ID: '0xf3c1995e5d77f75e9350369285a93d13c038a4019d91a508ef4375b31ca9f886', // Dev AdminCap
+  FOUNDER_ADMIN_CAP_ID: '0x1321544ceac5fce3f8837de4f7e8384ed17cfae5d2c352df8f013572d5924ee9', // Founder AdminCap
+  GLOBAL_STATS_ID: '0x788140e00a029ec80fbbce02592ddeb18696207af57cc3062fe8d629be608c45', // GlobalStats
   RANDOM_OBJECT_ID: '0x8',
   MODULE_NAME: 'sudoz_artifacts_v2',
   EVOLVED_MODULE_NAME: 'evolved_sudoz',
   
-  // EVOLVED SUDOZ Contract IDs - KIOSK-INTEGRATED
-  EVOLVED_ADMIN_CAP_ID: '0x9791770f3162ace6e143778b3efa94b3c90399726457f0e55bc5f35a9593ee0c', // EvolvedAdminCap
-  EVOLVED_STATS_ID: '0x8756b62b9a94690e6935f53815ce20425a4654b0b950953e16eba683a6f5b5a5', // EvolvedStats
-  TRANSFER_POLICY_ID: '0x368c81b2ba8d2634b9617fcab6eea9876589805f2e91f2ecd2a4f24bd83bc46f', // TransferPolicy
-  TRANSFER_POLICY_CAP_ID: '0x2608d6dbb6f063785fb0f65dd0f9e25cc2df4d330c9d57b642c70c42a1deeb91', // TransferPolicyCap
-  EVOLUTION_AUTH_ID: '0x189e55c7793ee65a70ebd56599d51d16c7db76f53acce4438354263f36629c0e', // EvolutionAuth
+  // EVOLVED SUDOZ Contract IDs - MAINNET
+  EVOLVED_ADMIN_CAP_ID: '0xe44533f1edf53af5f8badb6fbedb6ec751e70b935997f264414a931a5d82d5a7', // Dev EvolvedAdminCap
+  FOUNDER_EVOLVED_ADMIN_CAP_ID: '0xe44533f1edf53af5f8badb6fbedb6ec751e70b935997f264414a931a5d82d5a7', // Founder EvolvedAdminCap
+  EVOLVED_STATS_ID: '0x286e8100bf52f8fd0b5992bad1dbb8b5ee71e0dfc48eed8ac285563d65e7a02d', // EvolvedStats
+  TRANSFER_POLICY_ID: '0x42fee34d5e843199096ae25d571a14eb4907000fdd431de45387b9cb21ca3452', // TransferPolicy
+  TRANSFER_POLICY_CAP_ID: '0x41fa50d362073d1baf03267647e9c8cfcc5460f7aef1435a9d26d9c882694405', // TransferPolicyCap
+  EVOLUTION_AUTH_ID: '0xdb95f7f4d0d7ac124eb9633fd0bbb664c9193ab93ae78074580aed311ce9c53d', // EvolutionAuth
   
   // Revenue configuration
   REVENUE_CONFIG: REVENUE_CONFIG,
@@ -48,6 +49,10 @@ export const CONTRACT_CONSTANTS = {
     MINT_DEVELOPER_RESERVE_SPECIFIC: 'mint_developer_reserve_specific',
     MINT_DEVELOPER_RESERVE_BATCH: 'mint_developer_reserve_batch',
     MINT_DEVELOPER_RESERVE_ONE_OF_ONES: 'mint_developer_reserve_one_of_ones',
+    MINT_DEVELOPER_RESERVE_TO_KIOSK: 'mint_developer_reserve_to_kiosk',
+    MINT_AND_LOCK_TO_KIOSK: 'mint_and_lock_to_kiosk',
+    MINT_ONE_OF_ONES_TO_KIOSK: 'mint_one_of_ones_to_kiosk',
+    MINT_DEVELOPER_RESERVE_BATCH_TO_KIOSK: 'mint_developer_reserve_batch_to_kiosk',
     // Kiosk functions
     PLACE_IN_KIOSK: 'place_in_kiosk',
     LIST_FOR_SALE: 'list_for_sale',
@@ -68,8 +73,10 @@ export const CONTRACT_CONSTANTS = {
   ARTIFACT_SUPPLY: 13600,
   EVOLVED_SUPPLY: 5555,
   DEVELOPER_RESERVE_TOTAL: 280,
-  DEVELOPER_RESERVE_ONE_OF_ONES: 10,
-  DEVELOPER_RESERVE_RANDOM: 270,
+  FOUNDER_RESERVE: 250, // Founder's allocation (includes 1/1s)
+  DEV_RESERVE: 30, // Dev's allocation
+  DEVELOPER_RESERVE_ONE_OF_ONES: 10, // Part of founder's 250
+  DEVELOPER_RESERVE_RANDOM: 270, // 240 founder + 30 dev
   MAX_BATCH_SIZE: 50,
   
   // 1/1 metadata IDs for developer reserve

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useSignAndExecuteTransaction, useSuiClient, useCurrentAccount } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { CONTRACT_CONSTANTS } from '@/constants/contract';
+import { autoGetOrCreateKiosk, ensureKiosk } from '@/utils/kioskUtils';
 
 interface NFTCardProps {
   nft: any;
@@ -183,18 +184,30 @@ export function NFTCard({ nft }: NFTCardProps) {
         `Choose evolution type:\n` +
         `✅ OK = KIOSK EVOLUTION (Marketplace Ready + Royalties)\n` +
         `❌ Cancel = BASIC EVOLUTION (Simple Transfer)\n\n` +
-        `Kiosk evolution creates a kiosk with locked NFT for trading. Basic evolution gives you the NFT directly.`
+        `Kiosk evolution locks NFT for trading. Basic evolution gives you the NFT directly.`
       );
       
       // Step 5: Execute evolution transaction based on user choice
       const tx = new Transaction();
       
       if (evolutionType) {
-        // Kiosk Evolution (with TransferPolicy)
+        // Kiosk Evolution - Smart kiosk management
+        const userAddress = account?.address;
+        if (!userAddress) {
+          alert('No wallet connected');
+          return;
+        }
+
+        // Ensure kiosk exists (create if needed) - same as dev reserve minting
+        const kioskInfo = await ensureKiosk(client, userAddress, tx);
+        
+        // Always use evolve_artifact_to_kiosk since we have a kiosk
         tx.moveCall({
-          target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.EVOLVE_ARTIFACT_WITH_POLICY}`,
+          target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.EVOLVE_ARTIFACT_TO_KIOSK}`,
           arguments: [
             tx.object(objectId),
+            kioskInfo.kioskId,
+            kioskInfo.kioskCap,
             tx.object(CONTRACT_CONSTANTS.TRANSFER_POLICY_ID),
             tx.object(CONTRACT_CONSTANTS.GLOBAL_STATS_ID),
             tx.object(CONTRACT_CONSTANTS.EVOLVED_STATS_ID),
@@ -209,7 +222,12 @@ export function NFTCard({ nft }: NFTCardProps) {
             tx.pure.string(traits.earrings),
           ],
         });
-        console.log('Using Kiosk Evolution - NFT will be locked in kiosk for marketplace trading');
+        
+        if (kioskInfo.isNew) {
+          console.log('Creating new kiosk and evolving NFT');
+        } else {
+          console.log('Evolving NFT to existing kiosk:', kioskInfo);
+        }
       } else {
         // Basic Evolution (simple transfer)
         tx.moveCall({

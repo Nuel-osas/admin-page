@@ -5,6 +5,7 @@ import { useCurrentAccount, useSuiClient, useSignAndExecuteTransaction, useSuiCl
 import { Transaction } from '@mysten/sui/transactions';
 import { bcs } from '@mysten/sui/bcs';
 import { CONTRACT_CONSTANTS } from '@/constants/contract';
+import { ensureKiosk } from '@/utils/kioskUtils';
 
 export function AdminSection() {
   const account = useCurrentAccount();
@@ -18,7 +19,7 @@ export function AdminSection() {
   const [evolvedAdminCapId, setEvolvedAdminCapId] = useState<string | null>(null);
   const [isMintingDevReserve, setIsMintingDevReserve] = useState(false);
   const [selectedOneOfOne, setSelectedOneOfOne] = useState<number>(CONTRACT_CONSTANTS.ONE_OF_ONE_IDS[0]);
-  const [batchSize, setBatchSize] = useState<number>(50);
+  const [isWithdrawingRoyalties, setIsWithdrawingRoyalties] = useState(false);
 
   // Check if current account owns the AdminCap
   const { data: adminCapData } = useSuiClientQuery('getOwnedObjects', {
@@ -69,11 +70,16 @@ export function AdminSection() {
       console.log('Found AdminCap:', capId);
       console.log('AdminCap data:', adminCap);
       setAdminCapId(capId);
-    } else if (account?.address === '0x4822bfc9c86d1a77daf48b0bdf8f012ae9b7f8f01b4195dc0f3fd4fb838525bd') {
-      // Manually set for known admin address
-      console.log('Manually setting AdminCap for known admin address');
+    } else if (account?.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.FOUNDER_ADDRESS && CONTRACT_CONSTANTS.FOUNDER_ADMIN_CAP_ID) {
+      // Manually set for founder address
+      console.log('Manually setting AdminCap for founder address');
       setHasAdminCap(true);
-      setAdminCapId('0x7a85f836ba0812d9c5bbb5863a6631cde450d9be5141acf2a7d8c5c241a508bf');
+      setAdminCapId(CONTRACT_CONSTANTS.FOUNDER_ADMIN_CAP_ID);
+    } else if (account?.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.DEV_ADDRESS && CONTRACT_CONSTANTS.DEV_ADMIN_CAP_ID) {
+      // Manually set for dev address
+      console.log('Manually setting AdminCap for dev address');
+      setHasAdminCap(true);
+      setAdminCapId(CONTRACT_CONSTANTS.DEV_ADMIN_CAP_ID);
     } else {
       setHasAdminCap(false);
       setAdminCapId(null);
@@ -82,17 +88,46 @@ export function AdminSection() {
     }
   }, [adminCapData, account]);
 
+  // Auto-refresh evolved stats every 30 seconds to keep royalty value updated
   useEffect(() => {
+    if (evolvedStatsData && refetchEvolvedStats) {
+      const interval = setInterval(() => {
+        console.log('Auto-refreshing evolved stats...');
+        refetchEvolvedStats();
+      }, 30000); // Refresh every 30 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [evolvedStatsData, refetchEvolvedStats]);
+
+  useEffect(() => {
+    console.log('EvolvedAdminCap query result:', evolvedAdminCapData);
+    console.log('Current account:', account?.address);
+    console.log('Is Founder:', account?.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.FOUNDER_ADDRESS);
+    console.log('Founder EvolvedAdminCap ID:', (CONTRACT_CONSTANTS as any).FOUNDER_EVOLVED_ADMIN_CAP_ID);
+    
     if (evolvedAdminCapData?.data && evolvedAdminCapData.data.length > 0) {
       setHasEvolvedAdminCap(true);
       // Get the actual EvolvedAdminCap object ID
       const evolvedAdminCap = evolvedAdminCapData.data[0];
       setEvolvedAdminCapId(evolvedAdminCap.data?.objectId || null);
+      console.log('Found EvolvedAdminCap from query:', evolvedAdminCap.data?.objectId);
+    } else if (account?.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.FOUNDER_ADDRESS && (CONTRACT_CONSTANTS as any).FOUNDER_EVOLVED_ADMIN_CAP_ID) {
+      // Manually set for founder address
+      console.log('Manually setting EvolvedAdminCap for founder address');
+      setHasEvolvedAdminCap(true);
+      setEvolvedAdminCapId((CONTRACT_CONSTANTS as any).FOUNDER_EVOLVED_ADMIN_CAP_ID);
+    } else if (account?.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.DEV_ADDRESS && CONTRACT_CONSTANTS.EVOLVED_ADMIN_CAP_ID) {
+      // Manually set for dev address
+      console.log('Manually setting EvolvedAdminCap for dev address');
+      setHasEvolvedAdminCap(true);
+      setEvolvedAdminCapId(CONTRACT_CONSTANTS.EVOLVED_ADMIN_CAP_ID);
     } else {
+      console.log('No EvolvedAdminCap found or set');
       setHasEvolvedAdminCap(false);
       setEvolvedAdminCapId(null);
     }
-  }, [evolvedAdminCapData]);
+  }, [evolvedAdminCapData, account]);
 
   // Check if current account is authorized
   const isFounder = account?.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.FOUNDER_ADDRESS;
@@ -121,8 +156,15 @@ export function AdminSection() {
   const actualEvolvedMinted = evolvedStatsFields.evolved_minted || evolvedMinted;
   const level10Burns = stats.level_10_burns || '0';
   
+  // Extract royalty fees from evolved stats - always show value even if 0
+  const royaltyFeesBalance = evolvedStatsFields.royalty_fees || '0';
+  const royaltyFeesInSui = isNaN(Number(royaltyFeesBalance)) ? 0 : Number(royaltyFeesBalance) / 1_000_000_000;
+  
   console.log('Stats data:', stats);
   console.log('Artifacts minted:', artifactsMinted);
+  console.log('Evolved stats fields:', evolvedStatsFields);
+  console.log('Royalty fees balance:', royaltyFeesBalance);
+  console.log('Royalty fees in SUI:', royaltyFeesInSui);
 
   const handleWithdrawFees = async () => {
     if (!isFounder || founderPoolInSui <= 0) return;
@@ -214,6 +256,58 @@ export function AdminSection() {
     }
   };
 
+  const handleWithdrawRoyalties = async () => {
+    if (!hasEvolvedAdminCap || !evolvedAdminCapId || !account || !CONTRACT_CONSTANTS.EVOLVED_STATS_ID) {
+      alert('Missing requirements: EvolvedAdminCap or evolved stats not found');
+      return;
+    }
+
+    setIsWithdrawingRoyalties(true);
+    try {
+      const tx = new Transaction();
+
+      console.log('Royalty withdrawal - EvolvedStats ID:', CONTRACT_CONSTANTS.EVOLVED_STATS_ID);
+      console.log('Royalty withdrawal - Package ID:', CONTRACT_CONSTANTS.PACKAGE_ID);
+      console.log('Royalty withdrawal - EvolvedAdminCap:', evolvedAdminCapId);
+      console.log('Royalty withdrawal - Account:', account.address);
+
+      // Withdraw royalty fees
+      const [royaltyCoin] = tx.moveCall({
+        target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.EVOLVED_MODULE_NAME}::withdraw_royalty_fees`,
+        arguments: [
+          tx.object(evolvedAdminCapId),
+          tx.object(CONTRACT_CONSTANTS.EVOLVED_STATS_ID),
+        ],
+      });
+
+      // Transfer the withdrawn coin to the user
+      tx.transferObjects([royaltyCoin], tx.pure.address(account.address));
+
+      // Set gas budget for withdrawal transaction
+      tx.setGasBudget(2000000000); // 2 SUI
+
+      const result = await signAndExecute({
+        transaction: tx,
+      });
+
+      console.log('Royalty withdrawal successful:', result);
+      
+      if (result.digest) {
+        alert(`Royalty withdrawal successful! Transaction: ${result.digest}\n\nView on explorer: https://suivision.xyz/txblock/${result.digest}`);
+      }
+      
+      // Refresh stats with delay
+      setTimeout(async () => {
+        await refetchEvolvedStats();
+      }, 2000);
+    } catch (error) {
+      console.error('Royalty withdrawal failed:', error);
+      alert(`Royalty withdrawal failed: ${error}`);
+    } finally {
+      setIsWithdrawingRoyalties(false);
+    }
+  };
+
   const handleMintArtifact = async () => {
     if (!hasAdminCap || !adminCapId || !account) {
       alert('Missing requirements: AdminCap or account not found');
@@ -284,17 +378,69 @@ export function AdminSection() {
 
     setIsMintingDevReserve(true);
     try {
-      const tx = new Transaction();
+      // Fetch metadata and traits from IPFS for the selected 1/1
+      const metadataUrl = `https://ipfs.io/ipfs/bafybeic7ymazpspv6ojxwrr6rqu3glnrtzbj3ej477nowr73brmb4hkkka/metadata/${selectedOneOfOne}.json`;
+      const response = await fetch(metadataUrl);
+      const metadata = await response.json();
+      
+      // Extract traits from metadata
+      const traitsMap = new Map<string, string>();
+      metadata.attributes.forEach((attr: any) => {
+        traitsMap.set(attr.trait_type.toLowerCase(), attr.value);
+      });
+      
+      const traits = {
+        background: traitsMap.get('background') || 'AI Generated',
+        skin: traitsMap.get('skin') || '1/1 Exclusive',
+        clothes: traitsMap.get('clothes') || 'Special Edition',
+        hats: traitsMap.get('hats') || 'One of One',
+        eyewear: traitsMap.get('eyewear') || 'Unique',
+        mouth: traitsMap.get('mouth') || 'Limited',
+        earrings: traitsMap.get('earrings') || 'AI 1/1S',
+      };
 
+      const tx = new Transaction();
+      
+      // Ensure kiosk exists (create if needed)
+      const kioskInfo = await ensureKiosk(client, account.address, tx);
+      
+      // Always use kiosk version with all trait parameters
       tx.moveCall({
-        target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.EVOLVED_MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.MINT_DEVELOPER_RESERVE_SPECIFIC}`,
+        target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.EVOLVED_MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.MINT_DEVELOPER_RESERVE_TO_KIOSK}`,
         arguments: [
           tx.object(evolvedAdminCapId),
-          tx.pure.address(account.address),
+          kioskInfo.kioskId,  // Already wrapped by ensureKiosk
+          kioskInfo.kioskCap, // Already wrapped by ensureKiosk
           tx.pure.u64(selectedOneOfOne),
+          tx.pure.string(traits.background),
+          tx.pure.string(traits.skin),
+          tx.pure.string(traits.clothes),
+          tx.pure.string(traits.hats),
+          tx.pure.string(traits.eyewear),
+          tx.pure.string(traits.mouth),
+          tx.pure.string(traits.earrings),
           tx.object(CONTRACT_CONSTANTS.EVOLVED_STATS_ID),
         ],
       });
+      
+      if (kioskInfo.isNew) {
+        console.log('Creating new kiosk and minting 1/1 NFT');
+        // Share the kiosk AFTER using it in mint
+        tx.moveCall({
+          target: '0x2::transfer::public_share_object',
+          arguments: [kioskInfo.kioskId],
+          typeArguments: ['0x2::kiosk::Kiosk'],
+        });
+        
+        // Transfer cap to user
+        tx.moveCall({
+          target: '0x2::transfer::public_transfer',
+          arguments: [kioskInfo.kioskCap, tx.pure.address(account.address)],
+          typeArguments: ['0x2::kiosk::KioskOwnerCap'],
+        });
+      } else {
+        console.log('Minting 1/1 to existing kiosk');
+      }
 
       // Set gas budget for evolved mint transaction
       tx.setGasBudget(2000000000); // 2 SUI
@@ -322,71 +468,102 @@ export function AdminSection() {
     }
   };
 
-  const handleMintAllOneOfOnes = async () => {
-    if (!hasEvolvedAdminCap || !evolvedAdminCapId || !account || !CONTRACT_CONSTANTS.EVOLVED_STATS_ID) return;
-
-    setIsMintingDevReserve(true);
-    try {
-      const tx = new Transaction();
-
-      tx.moveCall({
-        target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.EVOLVED_MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.MINT_DEVELOPER_RESERVE_ONE_OF_ONES}`,
-        arguments: [
-          tx.object(evolvedAdminCapId),
-          tx.pure.address(account.address),
-          tx.object(CONTRACT_CONSTANTS.EVOLVED_STATS_ID),
-        ],
-      });
-
-      // Set gas budget for evolved mint transaction
-      tx.setGasBudget(5000000000); // 5 SUI for batch operation
-
-      const result = await signAndExecute({
-        transaction: tx,
-      });
-
-      console.log('All 1/1s mint successful:', result);
-      
-      // Trigger a refetch
-      setTimeout(() => {
-        window.dispatchEvent(new Event('nft-updated'));
-      }, 1000);
-      
-      // Refresh evolved stats
-      if (refetchEvolvedStats) await refetchEvolvedStats();
-    } catch (error) {
-      console.error('All 1/1s mint failed:', error);
-    } finally {
-      setIsMintingDevReserve(false);
-    }
-  };
 
   const handleMintRandomBatch = async () => {
     if (!hasEvolvedAdminCap || !evolvedAdminCapId || !account || !CONTRACT_CONSTANTS.EVOLVED_STATS_ID) return;
 
     setIsMintingDevReserve(true);
     try {
+      // Step 1: Get available metadata IDs from contract
+      const evolvedStatsObj = await client.getObject({
+        id: CONTRACT_CONSTANTS.EVOLVED_STATS_ID,
+        options: { showContent: true }
+      });
+      
+      const availableIds = (evolvedStatsObj.data?.content as any)?.fields?.available_metadata_ids || [];
+      
+      if (availableIds.length === 0) {
+        alert('No metadata IDs available!');
+        return;
+      }
+      
+      // Step 2: Select a random metadata ID
+      const randomMetadataId = availableIds[Math.floor(Math.random() * availableIds.length)];
+      
+      // Step 3: Fetch metadata and traits from IPFS
+      const metadataUrl = `https://ipfs.io/ipfs/bafybeic7ymazpspv6ojxwrr6rqu3glnrtzbj3ej477nowr73brmb4hkkka/metadata/${randomMetadataId}.json`;
+      const response = await fetch(metadataUrl);
+      const metadata = await response.json();
+      
+      // Step 4: Extract traits from metadata
+      const traitsMap = new Map<string, string>();
+      metadata.attributes.forEach((attr: any) => {
+        traitsMap.set(attr.trait_type.toLowerCase(), attr.value);
+      });
+      
+      const traits = {
+        background: traitsMap.get('background') || 'Unknown',
+        skin: traitsMap.get('skin') || 'Unknown',
+        clothes: traitsMap.get('clothes') || 'Unknown',
+        hats: traitsMap.get('hats') || 'Unknown',
+        eyewear: traitsMap.get('eyewear') || 'Unknown',
+        mouth: traitsMap.get('mouth') || 'Unknown',
+        earrings: traitsMap.get('earrings') || 'Unknown',
+      };
+      
+      console.log(`Minting random NFT with metadata ID: ${randomMetadataId}`, traits);
+      
       const tx = new Transaction();
-
+      
+      // Ensure kiosk exists (create if needed)
+      const kioskInfo = await ensureKiosk(client, account.address, tx);
+      
+      // Use mint_developer_reserve_to_kiosk with traits - same as evolution!
       tx.moveCall({
-        target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.EVOLVED_MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.MINT_DEVELOPER_RESERVE_BATCH}`,
+        target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.EVOLVED_MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.MINT_DEVELOPER_RESERVE_TO_KIOSK}`,
         arguments: [
           tx.object(evolvedAdminCapId),
-          tx.pure.address(account.address),
-          tx.pure.u64(batchSize),
+          kioskInfo.kioskId,  // Already wrapped by ensureKiosk
+          kioskInfo.kioskCap, // Already wrapped by ensureKiosk
+          tx.pure.u64(randomMetadataId),
+          tx.pure.string(traits.background),
+          tx.pure.string(traits.skin),
+          tx.pure.string(traits.clothes),
+          tx.pure.string(traits.hats),
+          tx.pure.string(traits.eyewear),
+          tx.pure.string(traits.mouth),
+          tx.pure.string(traits.earrings),
           tx.object(CONTRACT_CONSTANTS.EVOLVED_STATS_ID),
-          tx.object(CONTRACT_CONSTANTS.RANDOM_OBJECT_ID),
         ],
       });
+      
+      if (kioskInfo.isNew) {
+        console.log('Creating new kiosk and minting NFT');
+        // Share the kiosk AFTER using it in mint
+        tx.moveCall({
+          target: '0x2::transfer::public_share_object',
+          arguments: [kioskInfo.kioskId],
+          typeArguments: ['0x2::kiosk::Kiosk'],
+        });
+        
+        // Transfer cap to user
+        tx.moveCall({
+          target: '0x2::transfer::public_transfer',
+          arguments: [kioskInfo.kioskCap, tx.pure.address(account.address)],
+          typeArguments: ['0x2::kiosk::KioskOwnerCap'],
+        });
+      } else {
+        console.log('Minting NFT to existing kiosk');
+      }
 
-      // Set gas budget for evolved batch mint transaction
-      tx.setGasBudget(5000000000); // 5 SUI for batch operation
+      // Set gas budget for evolved mint transaction
+      tx.setGasBudget(2000000000); // 2 SUI
 
       const result = await signAndExecute({
         transaction: tx,
       });
 
-      console.log('Random batch mint successful:', result);
+      console.log('Random NFT mint successful:', result);
       
       // Trigger a refetch
       setTimeout(() => {
@@ -396,7 +573,7 @@ export function AdminSection() {
       // Refresh evolved stats
       if (refetchEvolvedStats) await refetchEvolvedStats();
     } catch (error) {
-      console.error('Random batch mint failed:', error);
+      console.error('Random NFT mint failed:', error);
     } finally {
       setIsMintingDevReserve(false);
     }
@@ -506,15 +683,28 @@ export function AdminSection() {
         </div>
       </div>
 
-      {hasEvolvedAdminCap && CONTRACT_CONSTANTS.EVOLVED_STATS_ID && (
+      {(hasEvolvedAdminCap || isFounder || isDev) && CONTRACT_CONSTANTS.EVOLVED_STATS_ID && (
         <div className="bg-white rounded-lg p-6 shadow mt-6">
           <h3 className="text-lg font-bold mb-4 text-black">Developer Reserve - THE SUDOZ Collection</h3>
+          <p className="text-sm text-gray-600 mb-2">
+            Total Reserve: 280 NFTs (250 Founder + 30 Dev)
+          </p>
+          {isFounder && (
+            <p className="text-sm font-medium text-purple-700 mb-2">
+              👑 Founder: 250 NFTs (includes 10 x 1/1s)
+            </p>
+          )}
+          {isDev && (
+            <p className="text-sm font-medium text-blue-700 mb-4">
+              🛠️ Developer: 30 NFTs
+            </p>
+          )}
           
           <div className="space-y-6">
             {/* 1/1 NFTs Section */}
             <div className="border-b pb-4">
-              <h4 className="font-medium mb-3 text-black">Mint Specific 1/1 NFTs</h4>
-              <p className="text-sm text-gray-600 mb-3">10 specific rare NFTs with predetermined metadata IDs</p>
+              <h4 className="font-medium mb-3 text-black">Mint Specific 1/1 NFTs (Founder Reserve)</h4>
+              <p className="text-sm text-gray-600 mb-3">10 specific rare NFTs - Part of founder's 250 allocation</p>
               
               <div className="flex items-center space-x-4 mb-3">
                 <select
@@ -538,14 +728,6 @@ export function AdminSection() {
                   {isMintingDevReserve ? 'Minting...' : 'Mint Selected 1/1'}
                 </button>
               </div>
-              
-              <button
-                onClick={handleMintAllOneOfOnes}
-                disabled={isMintingDevReserve}
-                className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-300 transition-colors w-full"
-              >
-                {isMintingDevReserve ? 'Minting...' : 'Mint All 10 1/1s at Once'}
-              </button>
             </div>
             
             {/* Random NFTs Section */}
@@ -553,31 +735,16 @@ export function AdminSection() {
               <h4 className="font-medium mb-3 text-black">Mint Random NFTs</h4>
               <p className="text-sm text-gray-600 mb-3">270 random NFTs from the remaining pool</p>
               
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <label className="text-sm font-medium text-black">Batch size:</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={CONTRACT_CONSTANTS.MAX_BATCH_SIZE}
-                    value={batchSize}
-                    onChange={(e) => setBatchSize(Math.min(CONTRACT_CONSTANTS.MAX_BATCH_SIZE, Math.max(1, Number(e.target.value))))}
-                    className="w-20 px-2 py-1 border rounded"
-                    disabled={isMintingDevReserve}
-                  />
-                </div>
-                
-                <button
-                  onClick={handleMintRandomBatch}
-                  disabled={isMintingDevReserve}
-                  className="bg-indigo-500 text-white px-6 py-2 rounded-lg hover:bg-indigo-600 disabled:bg-gray-300 transition-colors"
-                >
-                  {isMintingDevReserve ? 'Minting...' : `Mint ${batchSize} Random NFTs`}
-                </button>
-              </div>
+              <button
+                onClick={handleMintRandomBatch}
+                disabled={isMintingDevReserve}
+                className="bg-indigo-500 text-white px-6 py-2 rounded-lg hover:bg-indigo-600 disabled:bg-gray-300 transition-colors"
+              >
+                {isMintingDevReserve ? 'Minting...' : 'Mint 1 Random NFT'}
+              </button>
               
               <p className="text-xs text-gray-500 mt-2">
-                Note: Maximum batch size is {CONTRACT_CONSTANTS.MAX_BATCH_SIZE}. For 270 NFTs, you'll need {Math.ceil(270 / CONTRACT_CONSTANTS.MAX_BATCH_SIZE)} transactions.
+                Note: NFTs are minted one at a time. For 270 NFTs, you'll need 270 transactions.
               </p>
             </div>
             
@@ -609,6 +776,34 @@ export function AdminSection() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Royalty Fees Section */}
+      {hasEvolvedAdminCap && CONTRACT_CONSTANTS.EVOLVED_STATS_ID && (
+        <div className="bg-white rounded-lg p-6 shadow mt-6">
+          <h3 className="text-lg font-bold mb-4 text-black">THE SUDOZ Collection Royalties</h3>
+          
+          <div className="bg-purple-50 rounded-lg p-4 mb-4">
+            <p className="text-sm text-gray-600">Accumulated Royalty Fees (3% from secondary sales)</p>
+            <p className="text-2xl font-bold text-black">{(royaltyFeesInSui || 0).toFixed(4)} SUI</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Royalties accumulate from Kiosk trades with enforced transfer policy
+            </p>
+          </div>
+          
+          <button
+            onClick={handleWithdrawRoyalties}
+            disabled={isWithdrawingRoyalties || royaltyFeesInSui === 0}
+            className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 disabled:bg-gray-300 transition-colors font-medium w-full"
+          >
+            {isWithdrawingRoyalties ? 'Withdrawing...' : `Withdraw All Royalties (${royaltyFeesInSui.toFixed(2)} SUI)`}
+          </button>
+          
+          <p className="text-sm text-gray-500 mt-4">
+            Note: Only holders of EvolvedAdminCap can withdraw royalties. Royalties are collected from secondary sales 
+            when NFTs are traded through the Kiosk system with the transfer policy enforced.
+          </p>
         </div>
       )}
 

@@ -6,6 +6,7 @@ import { EvolvedNFTList } from '@/components/EvolvedNFTList';
 import { MintNFT } from '@/components/MintNFT';
 import { AdminSection } from '@/components/AdminSection';
 import { EvolvedStats } from '@/components/EvolvedStats';
+import { KioskManager } from '@/components/KioskManager';
 
 export default function Home() {
   return (
@@ -30,6 +31,8 @@ export default function Home() {
         <AdminSection />
         
         <EvolvedStats />
+        
+        <KioskManager />
         
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Test Controls</h2>
