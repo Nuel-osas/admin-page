@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useSignAndExecuteTransaction, useSuiClient, useCurrentAccount } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { CONTRACT_CONSTANTS } from '@/constants/contract';
-import { autoGetOrCreateKiosk, ensureKiosk } from '@/utils/kioskUtils';
+import { autoGetOrCreateKiosk, ensureKiosk, getUserKiosks } from '@/utils/kioskUtils';
 
 interface NFTCardProps {
   nft: any;
@@ -198,13 +198,97 @@ export function NFTCard({ nft }: NFTCardProps) {
           return;
         }
 
-        // Ensure kiosk exists (create if needed) - same as dev reserve minting
-        const kioskInfo = await ensureKiosk(client, userAddress, tx);
+        // Check if user has a kiosk first
+        const kiosks = await getUserKiosks(client, userAddress);
         
-        // Always use evolve_artifact_to_kiosk since we have a kiosk
-        tx.moveCall({
-          target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.EVOLVE_ARTIFACT_TO_KIOSK}`,
-          arguments: [
+        if (kiosks.length === 0) {
+          // User has no kiosk - create one first in a separate transaction
+          alert('You need a kiosk for marketplace trading. Creating a kiosk for you...');
+          
+          // Create kiosk transaction
+          const kioskTx = new Transaction();
+          const [kiosk, kioskCap] = kioskTx.moveCall({
+            target: '0x2::kiosk::new',
+            arguments: [],
+          });
+          
+          // Share the kiosk
+          kioskTx.moveCall({
+            target: '0x2::transfer::public_share_object',
+            typeArguments: ['0x2::kiosk::Kiosk'],
+            arguments: [kiosk],
+          });
+          
+          // Transfer the cap to the user
+          kioskTx.transferObjects([kioskCap], userAddress);
+          
+          try {
+            // Execute kiosk creation first
+            const kioskResult = await signAndExecute({
+              transaction: kioskTx,
+            });
+            
+            console.log('Kiosk created:', kioskResult);
+            alert('Kiosk created! Now proceeding with evolution...');
+            
+            // Wait a bit for the kiosk to be indexed
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Fetch the newly created kiosk
+            const newKiosks = await getUserKiosks(client, userAddress);
+            if (newKiosks.length === 0) {
+              throw new Error('Kiosk was created but not found. Please try again.');
+            }
+            
+            // Now proceed with evolution using the new kiosk
+            const newKioskInfo = {
+              kioskId: tx.object(newKiosks[0].kioskId),
+              kioskCap: tx.object(newKiosks[0].kioskCap),
+              isNew: false
+            };
+            
+            // Use evolve_artifact_to_kiosk with the newly created kiosk
+            tx.moveCall({
+              target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.EVOLVE_ARTIFACT_TO_KIOSK}`,
+              arguments: [
+                tx.object(objectId),
+                newKioskInfo.kioskId,
+                newKioskInfo.kioskCap,
+                tx.object(CONTRACT_CONSTANTS.TRANSFER_POLICY_ID),
+                tx.object(CONTRACT_CONSTANTS.GLOBAL_STATS_ID),
+                tx.object(CONTRACT_CONSTANTS.EVOLVED_STATS_ID),
+                tx.object(CONTRACT_CONSTANTS.RANDOM_OBJECT_ID),
+                tx.pure.u64(selectedMetadataId),
+                tx.pure.string(traits.background),
+                tx.pure.string(traits.skin),
+                tx.pure.string(traits.clothes),
+                tx.pure.string(traits.hats),
+                tx.pure.string(traits.eyewear),
+                tx.pure.string(traits.mouth),
+                tx.pure.string(traits.earrings),
+              ],
+            });
+          } catch (kioskError) {
+            console.error('Failed to create kiosk:', kioskError);
+            alert('Failed to create kiosk. Please try creating a kiosk manually first.');
+            setIsEvolving(false);
+            return;
+          }
+        } else {
+          // User has kiosk(s) - use the first one
+          const kioskInfo = {
+            kioskId: tx.object(kiosks[0].kioskId),
+            kioskCap: tx.object(kiosks[0].kioskCap),
+            isNew: false
+          };
+          
+          // Set gas budget before the evolution call
+          tx.setGasBudget(100000000); // 0.1 SUI
+          
+          // Use evolve_artifact_to_kiosk with existing kiosk
+          tx.moveCall({
+            target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.EVOLVE_ARTIFACT_TO_KIOSK}`,
+            arguments: [
             tx.object(objectId),
             kioskInfo.kioskId,
             kioskInfo.kioskCap,
@@ -225,14 +309,23 @@ export function NFTCard({ nft }: NFTCardProps) {
         
         if (kioskInfo.isNew) {
           console.log('Creating new kiosk and evolving NFT');
+          // Share the kiosk after evolution
+          tx.moveCall({
+            target: '0x2::transfer::public_share_object',
+            typeArguments: ['0x2::kiosk::Kiosk'],
+            arguments: [kioskInfo.kioskId],
+          });
+          // Transfer the kiosk cap to the user
+          tx.transferObjects([kioskInfo.kioskCap], userAddress);
         } else {
           console.log('Evolving NFT to existing kiosk:', kioskInfo);
         }
-      } else {
-        // Basic Evolution (simple transfer)
-        tx.moveCall({
-          target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.EVOLVE_ARTIFACT}`,
-          arguments: [
+      }
+    } else {
+      // Basic Evolution (simple transfer)
+      tx.moveCall({
+        target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.MODULE_NAME}::${CONTRACT_CONSTANTS.FUNCTIONS.EVOLVE_ARTIFACT}`,
+        arguments: [
             tx.object(objectId),
             tx.object(CONTRACT_CONSTANTS.GLOBAL_STATS_ID),
             tx.object(CONTRACT_CONSTANTS.EVOLVED_STATS_ID),
