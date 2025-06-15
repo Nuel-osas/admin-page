@@ -1,0 +1,30 @@
+TESTNET Deployment Information
+==============================
+
+Transaction Digest: BNhmk7abgV1u7u1Zsa5BDkQBcGxZ7JppLXJXbssKDh5f
+
+Package ID: 0x3ead3f49ccbb81a1ba1203955d1b0afde08f3a20598e346e9aa713b7af7ca644
+
+Important Object IDs:
+- AdminCap (Dev): 0x1a756d2f22de69cad72594c8693b79776cc066fcdee94aed922b7e6de6132ed3
+- AdminCap (Founder): 0x7c7fa51b08c3baf66692cc5a9ac41fee9b5d659dd90975f76a6134090b6cee52
+- GlobalStats: 0xa3d0ae5f2e07c984e2041785f486df7e8d7165fb5600b5bc869bf12b4d91ed50
+- UpgradeCap: 0xdd697aa7e361c98982370f4f13e19321188a0aa1902e6ea35cf0aae564bed6fb
+- Publisher: 0xf9ce3acb88d69f29378d441b94f9fe1530579ed6bc3b1cab3de43f2b198edad7
+- EvolutionAuth: 0x6a3474a6442099cc82113c270ba4747a831b7f31a563fed3ae4b2c0be72c51da
+
+Evolved Sudoz Objects:
+- EvolvedAdminCap: 0x22f8c2025d3f9399f0fdd2dc438e7f3b9f2474026391aa4d35b974516e8b318f
+- EvolvedStats: 0x6d51c1e20346222731b1e2b05bc1661152320d9c3ce1eb8e915e330561a80273
+- TransferPolicy: 0x65317fbdf39553658a79a37654923e6d20c1a23dd76ea60da43a51e67bc0d5ac
+- TransferPolicyCap: 0xedf684114a03e9513b77b70bb952888e0a78cd1f82ca6ba81d766705e6c9e58b
+
+Owner Addresses:
+- Dev Address: 0x4822bfc9c86d1a77daf48b0bdf8f012ae9b7f8f01b4195dc0f3fd4fb838525bd
+- Founder Address: 0x21221a34eb06d78b16ef4553572e228970f2972385b1d3feab68cfc80090f430
+
+Key Features Implemented:
+1. Evolution now requires metadata_id and trait parameters
+2. Frontend fetches traits from IPFS metadata
+3. Dev address has been changed to your address
+4. All trait handling is parameter-based (no generation)

@@ -1,0 +1,46 @@
+# SUI NFT PROJECT - TESTNET DEPLOYMENT INFO
+# Deployment Date: 2025-06-14 (NEW DEPLOYMENT)
+# Network: Sui Testnet
+
+## PACKAGE INFORMATION
+Package ID: 0x26310f1f1b117f270186083af2d8a3f7dd0f4d70ca29bb8c5500592a872e34dc
+Transaction Digest: HNnLiiEemEshyYvsaqFPL8GXkFGvwHxjsUHVeFkky9Gy
+
+## SHARED OBJECTS
+GlobalStats (Sudoz Artifacts): 0xfdb23ad83a7c809e71764c8c4113871cbc22c4725e34f72eff19cc9ccf40f7e6
+EvolvedStats: 0xf54b1736d5ac3d4b1644a94f7255a465dc168bdc45285c235b9f41edb0baf8a4
+TransferPolicy (Evolved): 0xf35c49dda32b55b317e1645093b385bd8f83363f243c6f9a08fc43541eb847e7
+
+## ADMIN CAPABILITIES
+Dev AdminCap (Sudoz): 0x5b358372ee0e37c7f580f50999e4b40ab72f7c0eedaa8410bdede5f6067c4c22
+Founder AdminCap (Sudoz): 0xad8d8738921c5c7c9ca6ac24d38572201e92aa69f48fd84ccb837994351d8931
+EvolvedAdminCap: 0x7b219f812795e39399d2cc00b66416216cd91ed3de3b881d6d37b00508fd72fc
+TransferPolicyCap: 0x058b573ecb787885e4af6310da3c0bb147278be75bd26b31ec1985ae0cbd90dc
+EvolutionAuth: 0xb36cde41c1eb0966e7b9d15185ae2ecc1eb2b59e0a50c43479ed73c3b77c3da1
+
+## SETUP STATUS
+✅ Contracts deployed
+✅ EvolutionAuth stored in GlobalStats (TX: 9twaXctGU87EQYTSsykiicEzBpYyFWPtMN4eLrSjHYcx)
+✅ Burn mechanisms enabled for testing (TX: JAdbQXGuXTvmuoAKqo8yujYsa97hR4d2VUcq926ipzC7)
+✅ Frontend configuration updated
+⏳ Royalty rule pending (will be set up on mainnet)
+
+## ADDRESSES
+Dev Address: 0x9a5b0ad3a18964ab7c0dbf9ab4cdecfd6b3899423b47313ae6e78f4b801022a3
+Founder Address: 0x21221a34eb06d78b16ef4553572e228970f2972385b1d3feab68cfc80090f430
+
+## KEY FEATURES
+- NFT Minting: Admins can mint SUDOZ ARTIFACTS
+- Leveling System: Users can upgrade NFTs from level 0-10
+- Evolution: Level 10 NFTs can evolve into THE SUDOZ collection
+- Revenue Split: 85% founder / 15% dev automatically handled
+- Burn Mechanisms: Refund (100% from founder pool) and reward burns enabled
+- Kiosk Integration: Full marketplace compatibility
+- Developer Reserve: 280 total (250 founder + 30 dev), including 10 1/1s
+
+## NOTES
+- Evolution system is fully functional
+- Royalty infrastructure is ready but rule needs to be added on mainnet
+- All admin capabilities have been distributed correctly
+- Burn mechanisms are enabled for testing
+- New function added: mint_developer_reserve_batch_to_kiosk for batch minting to kiosk

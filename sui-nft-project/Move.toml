@@ -1,0 +1,11 @@
+[package]
+name = "SuiNFTCollection"
+version = "0.0.1"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+SuiSystem = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-system", rev = "framework/testnet" }
+Bridge = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/bridge", rev = "framework/testnet" }
+
+[addresses]
+sui_nft_collection = "0x0"

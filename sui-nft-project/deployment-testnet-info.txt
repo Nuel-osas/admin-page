@@ -1,0 +1,34 @@
+# SUI NFT PROJECT - TESTNET DEPLOYMENT INFO
+# Deployment Date: 2025-06-14
+# Network: Sui Testnet
+
+## PACKAGE INFORMATION
+Package ID: 0x8a6133d17482db4461e3eb799669265adededf69ba243f5934e8b01e339355d4
+Transaction Digest: 8kxotHkpsts56SafJXKfhtD6U9V7HmZ4Ja266hDM4NcX
+
+## SHARED OBJECTS
+GlobalStats (Sudoz Artifacts): 0xd90e998805434da4e2e76d9e5549a7032b622cdacd548cfad57bd993c4099f41
+EvolvedStats: 0x66b0ce0a448b6cdea641f19317b9142e38438ff7a94730f260486cdd602a6775
+TransferPolicy (Evolved): 0x171e7985784e4947273b0d619070b2ef7d146361b46663251dc0e90d4663fead
+
+## ADMIN CAPABILITIES
+Dev AdminCap (Sudoz): 0xd47d8bbb328466f969d2439541141364e44b7532f773ae30f631a28ca030f2be
+Founder AdminCap (Sudoz): 0xac809cec0a98d9d07d3a5ff51229f50feef3dc2f9b4453e8a2f70d626488738b
+EvolvedAdminCap: 0xba6c674f9e0f5565f2df3c64fdca3394425dd6fdb97a2f58bc39649a90bdbe46
+TransferPolicyCap: 0x67fa74ec1bc9733d383ebead0de8fea4560844c5b9746232f505251bbb9562bc
+
+## SETUP STATUS
+✅ Contracts deployed
+✅ EvolutionAuth stored in GlobalStats
+✅ Burn mechanisms enabled for testing
+⏳ Royalty rule pending (will be set up on mainnet)
+
+## ADDRESSES
+Dev Address: 0x9a5b0ad3a18964ab7c0dbf9ab4cdecfd6b3899423b47313ae6e78f4b801022a3
+Founder Address: 0x21221a34eb06d78b16ef4553572e228970f2972385b1d3feab68cfc80090f430
+
+## NOTES
+- Evolution system is fully functional
+- Royalty infrastructure is ready but rule needs to be added on mainnet
+- All admin capabilities have been distributed correctly
+- Burn mechanisms are enabled for testing

@@ -1,0 +1,52 @@
+# SUI NFT PROJECT - MAINNET DEPLOYMENT INFO
+# Deployment Date: 2025-06-14
+# Network: Sui Mainnet
+
+## PACKAGE INFORMATION
+Package ID: 0x2a0cd7151a65aa0a8e6a2e0520ce3eabc8857ac414f99785e06e38fec512eaff
+
+## SHARED OBJECTS
+GlobalStats (Sudoz Artifacts): 0xdefdf641b7b924dc18402f9d7186b17170383729cee7b6a88d5b2ee2d7aa12a5
+EvolvedStats: 0x69e2a96454ea9b2489487535fcade7b9d8d6c6fdc8c0cb44393b4a2470ffb5cc
+TransferPolicy (Evolved): 0xa047dda7aca1eeb08cde6f0af77bfa97d600e1851c967f464f370fedaa6a3bf0
+
+## ADMIN CAPABILITIES
+Dev AdminCap (Sudoz): 0x6366b443ae19e315aebc447aef301841c0d91df6ebdcda51691cba37fa2acfd6
+Founder AdminCap (Sudoz): 0x58e296875e8093dceb1f5ece1ba2ba4bdaad53f9f746b0056d694430252ee6de
+Dev EvolvedAdminCap: 0x86f0bcfedaa1806b54e8310ab38f81944b17891e7859e21d83a4a7a009a3d5ad
+Founder EvolvedAdminCap: 0x6f63a2d8e41fe11b1e3eb8f26e02c715b4be855be0ed83c3fed82ff4b8dceb56
+TransferPolicyCap: 0xac3fae4d71c1f220ddaa76519933fda1c1a82a6aa3a6427ee756fbf326eaefe3
+EvolutionAuth: 0x2dc4f1a7781c0af410720074689cf6a474bc55a2e4b5e12d2ef4147ae3ff9ac4
+
+## SETUP STATUS
+✅ Contracts deployed
+✅ EvolutionAuth stored in GlobalStats (TX: G2mncZm5quLTVjPkEvJbbNiQwZZqxGqfT8ehjkSZpBya)
+✅ Burn mechanisms enabled (TX: 6g1CmcxoXat9MuVcSqPhBLZvKcQT8EHM3EGvqtrgUakz)
+✅ Frontend configuration updated
+✅ Royalty rule set up - 3% (300 basis points) (TX: 5da5TCZs6MA8MKB7A1t4oiiPtgjw519rQVcswzYp2Lnv)
+
+## ROYALTY CONFIGURATION
+- Royalty Rate: 3% (300 basis points)
+- Minimum Royalty: 1,000,000 MIST (0.001 SUI)
+- Royalty Rule Object: 0x1b25e3d9fe1eb1b25e7b149d0d0479a7aa8cc30f8c605d0b71fe0c2a731702cd
+- All major Sui marketplaces will respect this royalty
+
+## ADDRESSES
+Dev Address: 0x9a5b0ad3a18964ab7c0dbf9ab4cdecfd6b3899423b47313ae6e78f4b801022a3
+Founder Address: 0x21221a34eb06d78b16ef4553572e228970f2972385b1d3feab68cfc80090f430
+
+## KEY FEATURES
+- NFT Minting: Admins can mint SUDOZ ARTIFACTS
+- Leveling System: Users can upgrade NFTs from level 0-10
+- Evolution: Level 10 NFTs can evolve into THE SUDOZ collection
+- Revenue Split: 85% founder / 15% dev automatically handled
+- Burn Mechanisms: Refund (100% from founder pool) and reward burns enabled
+- Kiosk Integration: Full marketplace compatibility with 3% royalties
+- Developer Reserve: 280 total (250 founder + 30 dev), including 10 1/1s
+
+## NOTES
+- All systems are fully operational on mainnet
+- Royalties are enforced through Sui's Kiosk framework
+- Admin capabilities have been distributed correctly
+- Evolution system is fully functional
+- Burn mechanisms are enabled for production use

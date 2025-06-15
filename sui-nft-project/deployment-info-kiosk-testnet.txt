@@ -1,0 +1,57 @@
+TESTNET Deployment Information - KIOSK-INTEGRATED VERSION
+============================================================
+
+Transaction Digest: BRmwQhnWeMJpaJYeVKYPZchMXHuTJdWFcw2TzTW2Tpb6
+
+🎯 MAIN PACKAGE:
+Package ID: 0xfe1b4b8aa749be78e4adff15432b22b0f0efd8c9ab74b002fe1bbcf2e5d80b02
+
+🔧 ADMIN CAPABILITIES:
+- Dev AdminCap: 0x10dd76db14a46c1bd96a5e0fe3312328369fbdb06f14c1f741be2ab46be7e7a7
+- Founder AdminCap: 0xdb9cab65b99a68967eff308582cb30480e301610a56f710f3536e9fe9038284f
+- EvolvedAdminCap: 0x9791770f3162ace6e143778b3efa94b3c90399726457f0e55bc5f35a9593ee0c
+
+📊 SHARED OBJECTS:
+- GlobalStats: 0x9f7f49bb47bf6f016d891e5aefc79bd36f4734f813dbbbb824a88fdb21559b13
+- EvolvedStats: 0x8756b62b9a94690e6935f53815ce20425a4654b0b950953e16eba683a6f5b5a5
+
+🏪 KIOSK & MARKETPLACE:
+- TransferPolicy: 0x368c81b2ba8d2634b9617fcab6eea9876589805f2e91f2ecd2a4f24bd83bc46f
+- TransferPolicyCap: 0x2608d6dbb6f063785fb0f65dd0f9e25cc2df4d330c9d57b642c70c42a1deeb91
+- EvolutionAuth: 0x189e55c7793ee65a70ebd56599d51d16c7db76f53acce4438354263f36629c0e
+
+🔗 OTHER OBJECTS:
+- Publisher: 0x807c8b074b8962e2bfdec498f06c5850dbf4644020df93f4a212ee805ec38620
+- UpgradeCap: 0x89030f0f4c9188cc433a37ac80e6fe6e494cf808bf1d89490472399e7b568199
+- Display (EvolvedSudoz): 0xf555008f2b7656d9b1ebffb5bd7735a74c15529db4acc4d08f7d01021649f9f4
+- Display (SudozArtifact): 0xf63ace23b9b02dbc2452c503782164cc62cd135f6e237535f16b817bbd0a59b6
+
+👥 OWNER ADDRESSES:
+- Dev Address: 0x4822bfc9c86d1a77daf48b0bdf8f012ae9b7f8f01b4195dc0f3fd4fb838525bd (15% revenue)
+- Founder Address: 0x21221a34eb06d78b16ef4553572e228970f2972385b1d3feab68cfc80090f430 (85% revenue)
+
+🚀 KEY FEATURES IMPLEMENTED:
+1. ✅ DUAL EVOLUTION MODES: Basic vs Kiosk evolution
+2. ✅ AUTOMATIC KIOSK CREATION: entry_evolve_artifact_with_policy
+3. ✅ MARKETPLACE FUNCTIONS: place, list, purchase, delist, take
+4. ✅ ROYALTY ENFORCEMENT: 3% on all secondary sales
+5. ✅ DEVELOPER RESERVE: Kiosk-integrated minting functions
+6. ✅ FRONTEND INTEGRATION: User choice between evolution types
+7. ✅ CROSS-CONTRACT EVOLUTION: Secure burning + minting
+8. ✅ TRAIT PARAMETER SYSTEM: IPFS metadata fetching
+
+🎯 EVOLUTION OPTIONS:
+- Basic Evolution: entry_evolve_artifact (direct transfer)
+- Kiosk Evolution: entry_evolve_artifact_with_policy (marketplace ready)
+
+🏪 MARKETPLACE BENEFITS:
+- All evolved NFTs can be automatically locked in kiosks
+- 3% royalties collected on ALL secondary sales
+- Compatible with all Sui marketplaces (BlueMove, Clutchy, etc.)
+- Enterprise-grade trading infrastructure
+- Guaranteed ongoing revenue for creators
+
+🔄 UPGRADE PATH:
+- Previous Package: 0x3ead3f49ccbb81a1ba1203955d1b0afde08f3a20598e346e9aa713b7af7ca644
+- Current Package: 0xfe1b4b8aa749be78e4adff15432b22b0f0efd8c9ab74b002fe1bbcf2e5d80b02
+- Status: KIOSK-INTEGRATED VERSION READY FOR PRODUCTION
