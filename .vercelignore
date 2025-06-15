@@ -1,0 +1,17 @@
+# Ignore smart contract folder
+sui-nft-project/
+
+# Ignore node modules
+node_modules/
+
+# Ignore git files
+.git/
+.gitignore
+
+# Ignore local env files
+.env*.local
+
+# Ignore debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
