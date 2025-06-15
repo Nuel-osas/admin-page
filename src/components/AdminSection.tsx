@@ -59,6 +59,21 @@ export function AdminSection() {
     enabled: CONTRACT_CONSTANTS.EVOLVED_STATS_ID !== '',
   });
 
+  // Fetch Transfer Policy to get actual royalty balance
+  const { data: transferPolicyData, refetch: refetchTransferPolicy, isLoading: isLoadingPolicy } = useSuiClientQuery('getObject', {
+    id: CONTRACT_CONSTANTS.TRANSFER_POLICY_ID,
+    options: {
+      showContent: true,
+      showType: true,
+    },
+  }, {
+    enabled: !!CONTRACT_CONSTANTS.TRANSFER_POLICY_ID && CONTRACT_CONSTANTS.TRANSFER_POLICY_ID.length > 0,
+  });
+  
+  // Log the transfer policy loading state
+  console.log('Transfer Policy Loading:', isLoadingPolicy);
+  console.log('Transfer Policy ID exists:', !!CONTRACT_CONSTANTS.TRANSFER_POLICY_ID);
+
   useEffect(() => {
     console.log('AdminCap query result:', adminCapData);
     console.log('AdminCap data array:', adminCapData?.data);
@@ -88,17 +103,18 @@ export function AdminSection() {
     }
   }, [adminCapData, account]);
 
-  // Auto-refresh evolved stats every 30 seconds to keep royalty value updated
+  // Auto-refresh evolved stats and transfer policy every 30 seconds to keep royalty value updated
   useEffect(() => {
-    if (evolvedStatsData && refetchEvolvedStats) {
+    if ((evolvedStatsData && refetchEvolvedStats) || (transferPolicyData && refetchTransferPolicy)) {
       const interval = setInterval(() => {
-        console.log('Auto-refreshing evolved stats...');
-        refetchEvolvedStats();
+        console.log('Auto-refreshing stats...');
+        if (refetchEvolvedStats) refetchEvolvedStats();
+        if (refetchTransferPolicy) refetchTransferPolicy();
       }, 30000); // Refresh every 30 seconds
       
       return () => clearInterval(interval);
     }
-  }, [evolvedStatsData, refetchEvolvedStats]);
+  }, [evolvedStatsData, refetchEvolvedStats, transferPolicyData, refetchTransferPolicy]);
 
   useEffect(() => {
     console.log('EvolvedAdminCap query result:', evolvedAdminCapData);
@@ -156,15 +172,25 @@ export function AdminSection() {
   const actualEvolvedMinted = evolvedStatsFields.evolved_minted || evolvedMinted;
   const level10Burns = stats.level_10_burns || '0';
   
-  // Extract royalty fees from evolved stats - always show value even if 0
-  const royaltyFeesBalance = evolvedStatsFields.royalty_fees || '0';
-  const royaltyFeesInSui = isNaN(Number(royaltyFeesBalance)) ? 0 : Number(royaltyFeesBalance) / 1_000_000_000;
+  // Extract royalty fees from Transfer Policy instead of evolved stats
+  const transferPolicyContent = transferPolicyData?.data?.content;
+  const transferPolicyFields: any = transferPolicyContent && 'fields' in transferPolicyContent ? transferPolicyContent.fields : {};
+  // Handle both string and number balance values
+  const transferPolicyBalance = transferPolicyFields.balance || transferPolicyFields.Balance || '0';
+  const balanceValue = typeof transferPolicyBalance === 'object' ? '0' : String(transferPolicyBalance);
+  const royaltyFeesInSui = isNaN(Number(balanceValue)) ? 0 : Number(balanceValue) / 1_000_000_000;
   
-  console.log('Stats data:', stats);
-  console.log('Artifacts minted:', artifactsMinted);
-  console.log('Evolved stats fields:', evolvedStatsFields);
-  console.log('Royalty fees balance:', royaltyFeesBalance);
+  // Debug logging
+  console.log('=== ROYALTY DEBUG ===');
+  console.log('Transfer Policy Data:', transferPolicyData);
+  console.log('Transfer Policy Content:', transferPolicyContent);
+  console.log('Transfer Policy Fields:', transferPolicyFields);
+  console.log('Transfer Policy Balance Raw:', transferPolicyBalance);
+  console.log('Balance Value:', balanceValue);
   console.log('Royalty fees in SUI:', royaltyFeesInSui);
+  console.log('Transfer Policy ID:', CONTRACT_CONSTANTS.TRANSFER_POLICY_ID);
+  console.log('Button should be enabled:', royaltyFeesInSui > 0);
+  console.log('===================');
 
   const handleWithdrawFees = async () => {
     if (!isFounder || founderPoolInSui <= 0) return;
@@ -257,34 +283,55 @@ export function AdminSection() {
   };
 
   const handleWithdrawRoyalties = async () => {
-    if (!hasEvolvedAdminCap || !evolvedAdminCapId || !account || !CONTRACT_CONSTANTS.EVOLVED_STATS_ID) {
-      alert('Missing requirements: EvolvedAdminCap or evolved stats not found');
+    if (!account || !CONTRACT_CONSTANTS.TRANSFER_POLICY_ID || !CONTRACT_CONSTANTS.TRANSFER_POLICY_CAP_ID) {
+      alert('Missing requirements: Transfer Policy or TransferPolicyCap not found');
+      return;
+    }
+
+    // Check if user owns the TransferPolicyCap
+    const hasTransferPolicyCap = account.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.FOUNDER_ADDRESS || 
+                                 account.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.DEV_ADDRESS ||
+                                 account.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.DEPLOYER_ADDRESS;
+    
+    if (!hasTransferPolicyCap) {
+      alert('You need to own the TransferPolicyCap to withdraw royalties');
+      return;
+    }
+
+    // Get the balance from the Transfer Policy
+    const balance = transferPolicyData?.data?.content?.fields?.balance || '0';
+    if (balance === '0') {
+      alert('No royalties available to withdraw');
       return;
     }
 
     setIsWithdrawingRoyalties(true);
     try {
+      console.log('Royalty withdrawal - Transfer Policy ID:', CONTRACT_CONSTANTS.TRANSFER_POLICY_ID);
+      console.log('Royalty withdrawal - TransferPolicyCap ID:', CONTRACT_CONSTANTS.TRANSFER_POLICY_CAP_ID);
+      console.log('Royalty withdrawal - Account:', account.address);
+      console.log('Royalty withdrawal - Balance:', balance);
+      console.log('Royalty withdrawal - Amount:', royaltyFeesInSui, 'SUI');
+
       const tx = new Transaction();
 
-      console.log('Royalty withdrawal - EvolvedStats ID:', CONTRACT_CONSTANTS.EVOLVED_STATS_ID);
-      console.log('Royalty withdrawal - Package ID:', CONTRACT_CONSTANTS.PACKAGE_ID);
-      console.log('Royalty withdrawal - EvolvedAdminCap:', evolvedAdminCapId);
-      console.log('Royalty withdrawal - Account:', account.address);
-
-      // Withdraw royalty fees
-      const [royaltyCoin] = tx.moveCall({
-        target: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.EVOLVED_MODULE_NAME}::withdraw_royalty_fees`,
+      // Construct Option::None to withdraw all funds
+      // Using the proper format for Option in Sui
+      const [withdrawnCoin] = tx.moveCall({
+        target: `0x2::transfer_policy::withdraw`,
+        typeArguments: [CONTRACT_CONSTANTS.TYPES.EVOLVED_SUDOZ],
         arguments: [
-          tx.object(evolvedAdminCapId),
-          tx.object(CONTRACT_CONSTANTS.EVOLVED_STATS_ID),
+          tx.object(CONTRACT_CONSTANTS.TRANSFER_POLICY_ID),
+          tx.object(CONTRACT_CONSTANTS.TRANSFER_POLICY_CAP_ID),
+          tx.pure.option('u64', undefined) // Option::None to withdraw all
         ],
       });
 
-      // Transfer the withdrawn coin to the user
-      tx.transferObjects([royaltyCoin], tx.pure.address(account.address));
+      // Transfer to the current account
+      tx.transferObjects([withdrawnCoin], account.address);
 
-      // Set gas budget for withdrawal transaction
-      tx.setGasBudget(2000000000); // 2 SUI
+      // Set gas budget
+      tx.setGasBudget(10000000); // 0.01 SUI
 
       const result = await signAndExecute({
         transaction: tx,
@@ -293,12 +340,13 @@ export function AdminSection() {
       console.log('Royalty withdrawal successful:', result);
       
       if (result.digest) {
-        alert(`Royalty withdrawal successful! Transaction: ${result.digest}\n\nView on explorer: https://suivision.xyz/txblock/${result.digest}`);
+        alert(`Royalty withdrawal successful! Transaction: ${result.digest}\n\nAmount: ${royaltyFeesInSui} SUI\n\nView on explorer: https://suivision.xyz/txblock/${result.digest}`);
       }
       
       // Refresh stats with delay
       setTimeout(async () => {
-        await refetchEvolvedStats();
+        if (refetchTransferPolicy) await refetchTransferPolicy();
+        if (refetchEvolvedStats) await refetchEvolvedStats();
       }, 2000);
     } catch (error) {
       console.error('Royalty withdrawal failed:', error);
@@ -780,15 +828,18 @@ export function AdminSection() {
       )}
 
       {/* Royalty Fees Section */}
-      {hasEvolvedAdminCap && CONTRACT_CONSTANTS.EVOLVED_STATS_ID && (
+      {(isFounder || isDev || isDeployer) && CONTRACT_CONSTANTS.TRANSFER_POLICY_ID && (
         <div className="bg-white rounded-lg p-6 shadow mt-6">
-          <h3 className="text-lg font-bold mb-4 text-black">THE SUDOZ Collection Royalties</h3>
+          <h3 className="text-lg font-bold mb-4 text-black">THE SUDOZ Collection Royalties (Transfer Policy)</h3>
           
           <div className="bg-purple-50 rounded-lg p-4 mb-4">
-            <p className="text-sm text-gray-600">Accumulated Royalty Fees (3% from secondary sales)</p>
+            <p className="text-sm text-gray-600">Accumulated Royalty Fees (3% from marketplace sales)</p>
             <p className="text-2xl font-bold text-black">{(royaltyFeesInSui || 0).toFixed(4)} SUI</p>
             <p className="text-xs text-gray-500 mt-1">
-              Royalties accumulate from Kiosk trades with enforced transfer policy
+              Royalties from Transfer Policy (ID: {CONTRACT_CONSTANTS.TRANSFER_POLICY_ID.slice(0, 6)}...{CONTRACT_CONSTANTS.TRANSFER_POLICY_ID.slice(-4)})
+            </p>
+            <p className="text-xs text-gray-500">
+              These are marketplace royalties enforced by Sui's Transfer Policy system
             </p>
           </div>
           
@@ -801,8 +852,8 @@ export function AdminSection() {
           </button>
           
           <p className="text-sm text-gray-500 mt-4">
-            Note: Only holders of EvolvedAdminCap can withdraw royalties. Royalties are collected from secondary sales 
-            when NFTs are traded through the Kiosk system with the transfer policy enforced.
+            Note: Only the holder of the TransferPolicyCap can withdraw royalties. Royalties are collected from marketplace sales 
+            when NFTs are traded with the transfer policy enforced (3% of sale price).
           </p>
         </div>
       )}
