@@ -299,7 +299,11 @@ export function AdminSection() {
     }
 
     // Get the balance from the Transfer Policy
-    const balance = transferPolicyData?.data?.content?.fields?.balance || '0';
+    const policyContent = transferPolicyData?.data?.content;
+    const balance = (policyContent && 'fields' in policyContent) 
+      ? (policyContent.fields as any)?.balance || '0'
+      : '0';
+    
     if (balance === '0') {
       alert('No royalties available to withdraw');
       return;
