@@ -20,7 +20,6 @@ export default function ClaimPoolDeposit() {
   const client = useSuiClient();
   const [selectedNfts, setSelectedNfts] = useState<string[]>([]);
   const [availableNfts, setAvailableNfts] = useState<NFTOption[]>([]);
-  const [isAuthorized, setIsAuthorized] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [depositing, setDepositing] = useState(false);
 
@@ -56,7 +55,7 @@ export default function ClaimPoolDeposit() {
     }
   );
 
-  // Check authorization when pool data or account changes
+  // Check if user is admin
   useEffect(() => {
     if (!currentAccount || !poolData?.data?.content) return;
 
@@ -66,33 +65,14 @@ export default function ClaimPoolDeposit() {
         const fields = (poolContent as any).fields;
         const adminAddress = fields.admin;
         
-        console.log('Pool admin:', adminAddress);
-        console.log('Current account:', currentAccount.address);
-        console.log('Are they equal?', adminAddress === currentAccount.address);
-        
         if (adminAddress === currentAccount.address) {
           setIsAdmin(true);
-          setIsAuthorized(true);
-          console.log('User is admin - authorized');
         } else {
-          // For now, just check if they're the dev or founder address as fallback
-          const isDevOrFounder = 
-            currentAccount.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.DEV_ADDRESS ||
-            currentAccount.address === CONTRACT_CONSTANTS.REVENUE_CONFIG.FOUNDER_ADDRESS;
-          
-          if (isDevOrFounder) {
-            setIsAuthorized(true);
-            console.log('User is dev/founder - authorized');
-          } else {
-            setIsAuthorized(false);
-            console.log('User not authorized');
-          }
           setIsAdmin(false);
         }
       }
     } catch (error) {
-      console.error('Error checking authorization:', error);
-      setIsAuthorized(false);
+      console.error('Error checking admin status:', error);
       setIsAdmin(false);
     }
   }, [currentAccount, poolData]);
@@ -195,20 +175,8 @@ export default function ClaimPoolDeposit() {
     );
   }
 
-  if (!isAuthorized) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex flex-col items-center justify-center gap-4 p-12">
-          <AlertCircle className="h-12 w-12 text-gray-400" />
-          <p className="text-gray-600 text-center">
-            You are not authorized to deposit NFTs to the claim pool.
-            <br />
-            Only the admin and authorized depositors can add NFTs.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Remove authorization check - let the contract handle it
+  // The contract will reject unauthorized deposits
 
   return (
     <div className="bg-white rounded-lg shadow-sm border">
@@ -231,6 +199,15 @@ export default function ClaimPoolDeposit() {
         </div>
       </div>
       <div className="p-6 space-y-4">
+        {!isAdmin && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-black">
+              <strong>Note:</strong> Only the admin and authorized depositors can add NFTs to this pool. 
+              If you're not authorized, the transaction will fail.
+            </p>
+          </div>
+        )}
+        
         <div className="space-y-2">
           <p className="text-sm font-medium text-black">Available NFTs ({availableNfts.length})</p>
           {availableNfts.length === 0 ? (
