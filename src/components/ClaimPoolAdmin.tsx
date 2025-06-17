@@ -428,6 +428,16 @@ export default function ClaimPoolAdmin() {
                   Add
                 </button>
               </div>
+              <div className="mt-2 space-y-1">
+                <p className="text-xs text-gray-600">Quick add:</p>
+                <button
+                  type="button"
+                  onClick={() => setNewCollection('0x0081dfde5fd50f02357ed690459086a6e6890683a921ee19f136ec1a95f30068::ikachan::Nft')}
+                  className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-black"
+                >
+                  ikachan NFT
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm text-black">Remove Eligible Collection</label>
