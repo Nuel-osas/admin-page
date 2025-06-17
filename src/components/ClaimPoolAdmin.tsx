@@ -55,6 +55,7 @@ export default function ClaimPoolAdmin() {
             totalClaimed: parseInt(fields.total_claimed || '0'),
             claimingEnabled: fields.claiming_enabled || false,
             eligibleCollections: fields.eligible_collections?.contents || [],
+            authorizedDepositors: fields.authorized_depositors || {},
           });
         } else {
           setIsAdmin(false);
@@ -365,6 +366,48 @@ export default function ClaimPoolAdmin() {
             <Package className="h-4 w-4" />
             Eligible Collections
           </h4>
+          
+          {/* Current eligible collections */}
+          {poolInfo?.eligibleCollections && poolInfo.eligibleCollections.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm text-black mb-2">Current Eligible Collections:</p>
+              <div className="flex flex-wrap gap-2">
+                {poolInfo.eligibleCollections.map((col: any, index: number) => {
+                  let collectionType = '';
+                  try {
+                    if (Array.isArray(col)) {
+                      collectionType = new TextDecoder().decode(new Uint8Array(col));
+                    } else if (typeof col === 'string') {
+                      collectionType = col;
+                    }
+                  } catch (e) {
+                    collectionType = 'Unknown';
+                  }
+                  
+                  // Extract display name
+                  let displayName = collectionType;
+                  if (collectionType.includes('PrimeMachin')) displayName = 'Prime Machin';
+                  else if (collectionType.includes('Rootlet')) displayName = 'Rootlet';
+                  else {
+                    const parts = collectionType.split('::');
+                    displayName = parts[parts.length - 1] || collectionType;
+                  }
+                  
+                  return (
+                    <div key={index} className="group relative">
+                      <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full cursor-help">
+                        {displayName}
+                      </span>
+                      <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 p-2 bg-gray-800 text-white text-xs rounded max-w-xs break-all">
+                        {collectionType}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm text-black">Add Eligible Collection</label>

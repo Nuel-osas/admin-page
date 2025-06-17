@@ -28,6 +28,7 @@ export default function ClaimPoolSection() {
   const [selectedNft, setSelectedNft] = useState<EligibleNFT | null>(null);
   const [checkingNfts, setCheckingNfts] = useState(false);
   const [eligibleCollections, setEligibleCollections] = useState<string[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(false);
 
   // Fetch pool info
   const { data: poolData, refetch: refetchPool } = useSuiClientQuery('getObject', {
@@ -66,6 +67,7 @@ export default function ClaimPoolSection() {
       });
       
       // Extract eligible collections from the pool data
+      setLoadingCollections(true);
       if (fields.eligible_collections?.contents) {
         const collections = fields.eligible_collections.contents.map((col: any) => {
           // Convert bytes back to string
@@ -83,6 +85,7 @@ export default function ClaimPoolSection() {
           CLAIM_POOL_CONSTANTS.ELIGIBLE_COLLECTIONS.ROOTLET.TYPE
         ]);
       }
+      setLoadingCollections(false);
     }
     setLoading(false);
   }, [poolData]);
@@ -98,6 +101,8 @@ export default function ClaimPoolSection() {
   useEffect(() => {
     const fetchEligibleNfts = async () => {
       if (!currentAccount || eligibleCollections.length === 0) return;
+      
+      console.log('Eligible collections from contract:', eligibleCollections);
       
       setCheckingNfts(true);
       try {
@@ -126,6 +131,8 @@ export default function ClaimPoolSection() {
         const kioskData = await kioskResponse.json();
         const regularData = await regularResponse.json();
         
+        console.log('Kiosk API response:', kioskData);
+        console.log('Regular API response:', regularData);
         
         const allNfts = new Map(); // Use Map to deduplicate by objectId
         
@@ -134,6 +141,7 @@ export default function ClaimPoolSection() {
           kioskData.result.data.forEach((nft: any) => {
             allNfts.set(nft.objectId, { ...nft, isInKiosk: true });
           });
+          console.log('Sample kiosk NFT:', kioskData.result.data[0]);
         }
         
         // Add regular NFTs (some might overlap with kiosk ones)
@@ -149,8 +157,15 @@ export default function ClaimPoolSection() {
         
         // Check each unique NFT for eligibility
         allNfts.forEach((nft) => {
+          // Debug: log the exact values we're comparing
+          console.log('Checking NFT collection:', nft.collection);
+          console.log('Against eligible collections:', eligibleCollections);
+          
           // Check if NFT collection is in the eligible list
-          if (eligibleCollections.includes(nft.collection)) {
+          const matchFound = eligibleCollections.includes(nft.collection);
+          console.log('Match found:', matchFound);
+          
+          if (matchFound) {
             // Determine type based on known collections
             let type: 'prime' | 'rootlet' = 'prime'; // default
             if (nft.collection === CLAIM_POOL_CONSTANTS.ELIGIBLE_COLLECTIONS.PRIME_MACHIN.TYPE) {
@@ -170,6 +185,7 @@ export default function ClaimPoolSection() {
           }
         });
         
+        console.log('Found eligible NFTs:', eligible.length);
         setEligibleNfts(eligible);
         
         // Auto-select first NFT if available
@@ -318,7 +334,9 @@ export default function ClaimPoolSection() {
         <div className="space-y-2">
           <p className="text-sm font-medium text-black">Eligible Collections:</p>
           <div className="flex flex-wrap gap-2">
-            {eligibleCollections.length > 0 ? (
+            {loadingCollections ? (
+              <span className="text-xs text-gray-500">Loading collections...</span>
+            ) : eligibleCollections.length > 0 ? (
               eligibleCollections.map((collection, index) => {
                 // Extract a readable name from the collection type
                 let displayName = collection;
@@ -331,25 +349,27 @@ export default function ClaimPoolSection() {
                 }
                 
                 return (
-                  <span key={index} className="border border-gray-300 text-gray-700 text-xs px-2 py-1 rounded-full">
-                    {displayName}
-                  </span>
+                  <div key={index} className="group relative">
+                    <span className="border border-gray-300 text-gray-700 text-xs px-2 py-1 rounded-full cursor-help">
+                      {displayName}
+                    </span>
+                    <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 p-2 bg-gray-800 text-white text-xs rounded max-w-xs break-all">
+                      {collection}
+                    </div>
+                  </div>
                 );
               })
             ) : (
-              <>
-                <span className="border border-gray-300 text-gray-700 text-xs px-2 py-1 rounded-full">
-                  Prime Machin
-                </span>
-                <span className="border border-gray-300 text-gray-700 text-xs px-2 py-1 rounded-full">
-                  Rootlet
-                </span>
-              </>
+              <span className="text-xs text-gray-500 italic">
+                No eligible collections configured
+              </span>
             )}
           </div>
-          <p className="text-xs text-orange-600 mt-2">
-            ⚠️ You must own one of these NFTs to claim from this pool
-          </p>
+          {eligibleCollections.length > 0 && (
+            <p className="text-xs text-orange-600 mt-2">
+              ⚠️ You must own one of these NFTs to claim from this pool
+            </p>
+          )}
         </div>
 
         {currentAccount && (
@@ -379,11 +399,22 @@ export default function ClaimPoolSection() {
                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-black"
                       disabled={claiming || isPending}
                     >
-                      {eligibleNfts.map((nft) => (
-                        <option key={nft.objectId} value={nft.objectId}>
-                          {nft.name} ({nft.type === 'prime' ? 'PrimeMachin' : 'Rootlet'}) {nft.isInKiosk ? '🔒 In Kiosk' : '✓ In Wallet'}
-                        </option>
-                      ))}
+                      {eligibleNfts.map((nft) => {
+                        // Extract a display name for the collection
+                        let collectionDisplay = 'Unknown';
+                        if (nft.collection.includes('PrimeMachin')) collectionDisplay = 'Prime Machin';
+                        else if (nft.collection.includes('Rootlet')) collectionDisplay = 'Rootlet';
+                        else {
+                          const parts = nft.collection.split('::');
+                          collectionDisplay = parts[parts.length - 1] || 'Collection';
+                        }
+                        
+                        return (
+                          <option key={nft.objectId} value={nft.objectId}>
+                            {nft.name} ({collectionDisplay}) {nft.isInKiosk ? '🔒 In Kiosk' : '✓ In Wallet'}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   
