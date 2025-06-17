@@ -100,3 +100,69 @@ CONTRACT_CONSTANTS.TYPES = {
   EVOLVED_SUDOZ: `${CONTRACT_CONSTANTS.PACKAGE_ID}::${CONTRACT_CONSTANTS.EVOLVED_MODULE_NAME}::EvolvedSudoz`,
 };
 
+// Claim Pool Constants
+export const CLAIM_POOL_CONSTANTS = {
+  // Package and object IDs
+  PACKAGE_ID: '0x81a27789d618d02cdc3bbda97625dbfc93887237581a1d68575265d700393f0e',
+  NFT_GATED_CLAIM_POOL_ID: '0xa232f0313e18b6ead61abcae2b1189ea2161dfc018bf58ddbbeb825be70c6655',
+  BASIC_CLAIM_POOL_ID: '0x4b56f0499416cfd0eff564939573b91ff82df8031ec898af82599852091e0523',
+  
+  // Module names
+  CLAIM_POOL_MODULE: 'claim_pool',
+  NFT_GATED_MODULE: 'nft_gated_claim_pool_v2',
+  BATCH_DEPOSIT_MODULE: 'batch_deposit_v2',
+  
+  // Function names
+  FUNCTIONS: {
+    // Basic claim pool
+    ADD_NFT_TO_POOL: 'add_nft_to_pool',
+    CLAIM_NFT: 'claim_nft',
+    SET_CLAIMING_ENABLED: 'set_claiming_enabled',
+    
+    // NFT-gated claim pool
+    CLAIM_WITH_NFT: 'claim_with_nft',
+    ADD_ELIGIBLE_COLLECTION: 'add_eligible_collection',
+    REMOVE_ELIGIBLE_COLLECTION: 'remove_eligible_collection',
+    CREATE_OWNERSHIP_PROOF: 'create_ownership_proof',
+    ADD_AUTHORIZED_DEPOSITOR: 'add_authorized_depositor',
+    REMOVE_AUTHORIZED_DEPOSITOR: 'remove_authorized_depositor',
+    REMOVE_NFTS_FROM_POOL: 'remove_nfts_from_pool',
+    
+    // Batch deposit functions
+    BATCH_DEPOSIT_5: 'batch_deposit_5',
+    BATCH_DEPOSIT_10: 'batch_deposit_10',
+    BATCH_DEPOSIT_20: 'batch_deposit_20',
+    
+    // View functions
+    GET_POOL_INFO: 'get_pool_info',
+    HAS_CLAIMED: 'has_claimed',
+    CAN_CLAIM: 'can_claim',
+    IS_COLLECTION_ELIGIBLE: 'is_collection_eligible',
+    IS_AUTHORIZED_DEPOSITOR: 'is_authorized_depositor',
+  },
+  
+  // Eligible NFT collections
+  ELIGIBLE_COLLECTIONS: {
+    PRIME_MACHIN: {
+      TYPE: '0x034c162f6b594cb5a1805264dd01ca5d80ce3eca6522e6ee37fd9ebfb9d3ddca::factory::PrimeMachin',
+      TYPE_BYTES: Array.from(new TextEncoder().encode('0x034c162f6b594cb5a1805264dd01ca5d80ce3eca6522e6ee37fd9ebfb9d3ddca::factory::PrimeMachin')),
+      NAME: 'Prime Machin',
+    },
+    ROOTLET: {
+      TYPE: '0x8f74a7d632191e29956df3843404f22d27bd84d92cca1b1abde621d033098769::rootlet::Rootlet',
+      TYPE_BYTES: Array.from(new TextEncoder().encode('0x8f74a7d632191e29956df3843404f22d27bd84d92cca1b1abde621d033098769::rootlet::Rootlet')),
+      NAME: 'Rootlet',
+    },
+  },
+  
+  // Error codes
+  ERRORS: {
+    NOT_ADMIN: 1,
+    POOL_EMPTY: 2,
+    ALREADY_CLAIMED: 3,
+    CLAIMING_PAUSED: 4,
+    NOT_ELIGIBLE: 5,
+    NO_ELIGIBLE_NFT: 6,
+  },
+};
+

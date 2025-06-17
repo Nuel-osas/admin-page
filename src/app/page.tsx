@@ -7,6 +7,7 @@ import { MintNFT } from '@/components/MintNFT';
 import { AdminSection } from '@/components/AdminSection';
 import { EvolvedStats } from '@/components/EvolvedStats';
 import { KioskManager } from '@/components/KioskManager';
+import ClaimPoolManager from '@/components/ClaimPoolManager';
 
 export default function Home() {
   return (
@@ -16,7 +17,7 @@ export default function Home() {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                SUDOZ ARTIFACTS - Testnet
+                SUDOZ ARTIFACTS
               </h1>
               <p className="text-sm text-gray-600 mt-1">
                 Evolve to THE SUDOZ - Limited supply available
@@ -33,6 +34,10 @@ export default function Home() {
         <EvolvedStats />
         
         <KioskManager />
+        
+        <div className="mb-8">
+          <ClaimPoolManager />
+        </div>
         
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Test Controls</h2>
