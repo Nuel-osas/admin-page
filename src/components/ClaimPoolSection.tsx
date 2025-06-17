@@ -23,37 +23,16 @@ export default function ClaimPoolSection() {
     },
   });
 
-  // Check if user has claimed
+  // Check if user has claimed (simplified - we'll check this during the actual claim attempt)
   const checkClaimStatus = async () => {
     if (!currentAccount) return;
     
     try {
-      const tx = new Transaction();
-      
-      // Check if user has claimed
-      const hasClaimed = tx.moveCall({
-        target: `${CLAIM_POOL_CONSTANTS.PACKAGE_ID}::${CLAIM_POOL_CONSTANTS.NFT_GATED_MODULE}::has_claimed`,
-        arguments: [
-          tx.object(CLAIM_POOL_CONSTANTS.NFT_GATED_CLAIM_POOL_ID),
-          tx.pure.address(currentAccount.address),
-        ],
-      });
-
-      // Check if user can claim
-      const canClaim = tx.moveCall({
-        target: `${CLAIM_POOL_CONSTANTS.PACKAGE_ID}::${CLAIM_POOL_CONSTANTS.NFT_GATED_MODULE}::can_claim`,
-        arguments: [
-          tx.object(CLAIM_POOL_CONSTANTS.NFT_GATED_CLAIM_POOL_ID),
-          tx.pure.address(currentAccount.address),
-        ],
-      });
-
-      // Execute view functions
-      const result = await tx.run();
-      
+      // For now, we'll set default values and let the contract handle validation during claim
+      // In a production app, you'd implement proper view function calls using a read-only transaction
       setClaimStatus({
-        hasClaimed: false, // Parse from result
-        canClaim: true, // Parse from result
+        hasClaimed: false, // We'll detect this during claim attempt
+        canClaim: true, // We'll let the contract validate this
       });
     } catch (error) {
       console.error('Error checking claim status:', error);
